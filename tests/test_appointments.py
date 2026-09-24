@@ -1,8 +1,8 @@
-from datetime import date, timedelta
+from datetime import datetime, timedelta
 
-from fastapi.testclient import TestClient
-from sqlmodel import SQLModel, Session, create_engine
 import pytest
+from fastapi.testclient import TestClient
+from sqlmodel import Session, SQLModel, create_engine
 
 from app.database import get_session
 from app.main import app
@@ -10,7 +10,9 @@ from app.main import app
 
 @pytest.fixture
 def client(tmp_path):
-    engine = create_engine(f"sqlite:///{tmp_path / 'test.db'}", connect_args={"check_same_thread": False})
+    engine = create_engine(
+        f"sqlite:///{tmp_path / 'test.db'}", connect_args={"check_same_thread": False}
+    )
     SQLModel.metadata.create_all(engine)
 
     def override_session():
@@ -34,22 +36,32 @@ def register_and_login(client, data):
 
 def setup_users(client):
     patient = {
-        "name": "Ana Pérez", "email": "ana@example.com", "phone": "+573001112233",
-        "password": "secreto123", "role": "patient", "document": "CC12345",
+        "name": "Ana Pérez",
+        "email": "ana@example.com",
+        "phone": "+573001112233",
+        "password": "secreto123",
+        "role": "patient",
+        "document": "CC12345",
     }
     doctor = {
-        "name": "Dr. López", "email": "doctor@example.com", "phone": "+573009998877",
-        "password": "secreto123", "role": "doctor", "specialty": "Medicina general",
+        "name": "Dr. López",
+        "email": "doctor@example.com",
+        "phone": "+573009998877",
+        "password": "secreto123",
+        "role": "doctor",
+        "specialty": "Medicina general",
         "professional_license": "MED-12345",
     }
     patient_token = register_and_login(client, patient)
     doctor_token = register_and_login(client, doctor)
-    doctor_id = client.get("/auth/me", headers={"Authorization": f"Bearer {doctor_token}"}).json()["id"]
+    doctor_id = client.get(
+        "/auth/me", headers={"Authorization": f"Bearer {doctor_token}"}
+    ).json()["id"]
     return patient_token, doctor_token, doctor_id
 
 
 def future_date_with_weekday(weekday):
-    current = date.today()
+    current = datetime.now().astimezone().date()
     days_ahead = (weekday - current.weekday()) % 7
     if days_ahead == 0:
         days_ahead = 7
@@ -75,7 +87,7 @@ def appointment_data(doctor_id, weekday=0):
 
 
 def test_creacion_de_disponibilidad_medica(client):
-    patient_token, doctor_token, doctor_id = setup_users(client)
+    _, doctor_token, _ = setup_users(client)
     response = create_availability(client, doctor_token)
     assert response.status_code == 201
 
@@ -84,7 +96,8 @@ def test_creacion_correcta_de_cita(client):
     patient_token, doctor_token, doctor_id = setup_users(client)
     create_availability(client, doctor_token)
     response = client.post(
-        "/appointments", headers={"Authorization": f"Bearer {patient_token}"},
+        "/appointments",
+        headers={"Authorization": f"Bearer {patient_token}"},
         json=appointment_data(doctor_id),
     )
     assert response.status_code == 201
@@ -92,12 +105,14 @@ def test_creacion_correcta_de_cita(client):
 
 
 def test_rechaza_cita_en_el_pasado(client):
-    patient_token, doctor_token, doctor_id = setup_users(client)
-    yesterday = (date.today() - timedelta(days=1)).isoformat()
+    patient_token, _, doctor_id = setup_users(client)
+    yesterday = (datetime.now().astimezone().date() - timedelta(days=1)).isoformat()
     data = appointment_data(doctor_id)
     data["appointment_date"] = yesterday
     response = client.post(
-        "/appointments", headers={"Authorization": f"Bearer {patient_token}"}, json=data,
+        "/appointments",
+        headers={"Authorization": f"Bearer {patient_token}"},
+        json=data,
     )
     assert response.status_code == 422
 
@@ -117,12 +132,17 @@ def test_paciente_solo_cancela_sus_propias_citas(client):
     patient_token, doctor_token, doctor_id = setup_users(client)
     create_availability(client, doctor_token)
     appointment = client.post(
-        "/appointments", headers={"Authorization": f"Bearer {patient_token}"},
+        "/appointments",
+        headers={"Authorization": f"Bearer {patient_token}"},
         json=appointment_data(doctor_id),
     ).json()
     other_patient = {
-        "name": "Luis Gómez", "email": "luis@example.com", "phone": "+573004445566",
-        "password": "secreto123", "role": "patient", "document": "CC67890",
+        "name": "Luis Gómez",
+        "email": "luis@example.com",
+        "phone": "+573004445566",
+        "password": "secreto123",
+        "role": "patient",
+        "document": "CC67890",
     }
     other_token = register_and_login(client, other_patient)
     response = client.patch(
@@ -136,7 +156,8 @@ def test_medico_puede_confirmar_una_cita(client):
     patient_token, doctor_token, doctor_id = setup_users(client)
     create_availability(client, doctor_token)
     appointment = client.post(
-        "/appointments", headers={"Authorization": f"Bearer {patient_token}"},
+        "/appointments",
+        headers={"Authorization": f"Bearer {patient_token}"},
         json=appointment_data(doctor_id),
     ).json()
     response = client.patch(
@@ -149,7 +170,7 @@ def test_medico_puede_confirmar_una_cita(client):
 
 
 def test_usuario_sin_permisos_recibe_403(client):
-    patient_token, doctor_token, doctor_id = setup_users(client)
+    patient_token, _, _ = setup_users(client)
     response = client.post(
         "/doctors/me/availability",
         headers={"Authorization": f"Bearer {patient_token}"},
@@ -159,7 +180,7 @@ def test_usuario_sin_permisos_recibe_403(client):
 
 
 def test_cita_inexistente_responde_404(client):
-    patient_token, doctor_token, doctor_id = setup_users(client)
+    patient_token, _, _ = setup_users(client)
     response = client.delete(
         "/appointments/9999",
         headers={"Authorization": f"Bearer {patient_token}"},

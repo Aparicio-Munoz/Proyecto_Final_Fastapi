@@ -19,7 +19,9 @@ def get_patient_appointments(
     current_user: User = Depends(require_role("patient")),
     session: Session = Depends(get_session),
 ):
-    return session.exec(select(Appointment).where(Appointment.patient_id == current_user.id)).all()
+    return session.exec(
+        select(Appointment).where(Appointment.patient_id == current_user.id)
+    ).all()
 
 
 @router.patch("/appointments/{appointment_id}/cancel", response_model=AppointmentPublic)

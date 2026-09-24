@@ -9,7 +9,9 @@ from app.schemas import AppointmentPublic, AvailabilityCreate
 router = APIRouter(prefix="/doctors/me", tags=["Médicos", "Disponibilidad"])
 
 
-@router.post("/availability", response_model=Availability, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/availability", response_model=Availability, status_code=status.HTTP_201_CREATED
+)
 def create_availability(
     data: AvailabilityCreate,
     current_user: User = Depends(require_role("doctor")),
@@ -45,7 +47,9 @@ def list_availability(
     current_user: User = Depends(require_role("doctor")),
     session: Session = Depends(get_session),
 ):
-    return session.exec(select(Availability).where(Availability.doctor_id == current_user.id)).all()
+    return session.exec(
+        select(Availability).where(Availability.doctor_id == current_user.id)
+    ).all()
 
 
 @router.get("/appointments", response_model=list[AppointmentPublic])
@@ -53,4 +57,6 @@ def list_doctor_appointments(
     current_user: User = Depends(require_role("doctor")),
     session: Session = Depends(get_session),
 ):
-    return session.exec(select(Appointment).where(Appointment.doctor_id == current_user.id)).all()
+    return session.exec(
+        select(Appointment).where(Appointment.doctor_id == current_user.id)
+    ).all()

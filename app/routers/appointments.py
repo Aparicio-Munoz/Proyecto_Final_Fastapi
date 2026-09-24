@@ -1,5 +1,3 @@
-from datetime import date
-
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlmodel import Session, select
 
@@ -52,7 +50,9 @@ def create_appointment(
     if duplicate:
         raise HTTPException(status_code=409, detail="Horario no disponible")
 
-    appointment = Appointment(patient_id=current_user.id, status="pending", **data.model_dump())
+    appointment = Appointment(
+        patient_id=current_user.id, status="pending", **data.model_dump()
+    )
     session.add(appointment)
     session.commit()
     session.refresh(appointment)

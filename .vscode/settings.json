@@ -1,0 +1,45 @@
+{
+  "python.defaultInterpreterPath": "${workspaceFolder}/venv",
+  "python.terminal.activateEnvironment": true,
+  "python-envs.workspaceSearchPaths": [
+    "./**/.venv",
+    "./**/venv",
+    "./**/env"
+  ],
+  "editor.formatOnSave": true,
+  "[python]": {
+    "editor.defaultFormatter": "charliermarsh.ruff",
+    "editor.formatOnSave": true,
+    "editor.codeActionsOnSave": {
+      "source.fixAll.ruff": "explicit",
+      "source.organizeImports.ruff": "explicit"
+    },
+    "editor.tabSize": 4,
+    "editor.insertSpaces": true
+  },
+  "files.encoding": "utf8",
+  "editor.minimap.enabled": true,
+  "editor.lineNumbers": "on",
+  "files.autoSave": "afterDelay",
+  "files.autoSaveDelay": 1500,
+  "workbench.editor.showTabs": "multiple",
+  "files.associations": {
+    ".env": "dotenv",
+    "*.env": "dotenv",
+    "*.py": "python",
+    "*.md": "markdown",
+    "*.json": "json"
+  },
+  "search.exclude": {
+    "**/venv": true,
+    "**/.venv": true,
+    "**/env": true,
+    "**/__pycache__": true,
+    "**/.git": true,
+    "**/*.pyc": true
+  },
+  "files.exclude": {
+    "**/__pycache__": true,
+    "**/*.pyc": true
+  }
+}

@@ -1,7 +1,14 @@
-from datetime import date, time
-from typing import Literal, Optional
+from datetime import date, datetime, time
+from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator, model_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    EmailStr,
+    Field,
+    field_validator,
+    model_validator,
+)
 
 
 class UserRegister(BaseModel):
@@ -10,9 +17,10 @@ class UserRegister(BaseModel):
     phone: str = Field(min_length=7, max_length=20)
     password: str = Field(min_length=6)
     role: Literal["patient", "doctor"]
-    document: Optional[str] = Field(default=None, min_length=5)
-    specialty: Optional[str] = None
-    professional_license: Optional[str] = None
+    document: str | None = Field(default=None, min_length=5)
+    specialty: str | None = None
+    professional_license: str | None = None
+    city: str | None = None
 
     @field_validator("phone")
     @classmethod
@@ -26,8 +34,12 @@ class UserRegister(BaseModel):
     def validar_datos_segun_rol(self):
         if self.role == "patient" and not self.document:
             raise ValueError("El documento es obligatorio para pacientes")
-        if self.role == "doctor" and (not self.specialty or not self.professional_license):
-            raise ValueError("La especialidad y la licencia son obligatorias para médicos")
+        if self.role == "doctor" and (
+            not self.specialty or not self.professional_license
+        ):
+            raise ValueError(
+                "La especialidad y la licencia son obligatorias para médicos"
+            )
         return self
 
 
@@ -39,9 +51,10 @@ class UserPublic(BaseModel):
     email: EmailStr
     phone: str
     role: str
-    document: Optional[str] = None
-    specialty: Optional[str] = None
-    professional_license: Optional[str] = None
+    document: str | None = None
+    city: str | None = None
+    specialty: str | None = None
+    professional_license: str | None = None
 
 
 class Token(BaseModel):
@@ -67,12 +80,13 @@ class AppointmentCreate(BaseModel):
     start_time: time
     end_time: time
     reason: str = Field(min_length=3)
+    notes: str | None = None
 
     @model_validator(mode="after")
     def validar_horario(self):
         if self.start_time >= self.end_time:
             raise ValueError("La hora inicial debe ser menor que la hora final")
-        if self.appointment_date < date.today():
+        if self.appointment_date < datetime.now().astimezone().date():
             raise ValueError("La fecha no puede estar en el pasado")
         return self
 
@@ -92,3 +106,4 @@ class AppointmentPublic(BaseModel):
     end_time: time
     reason: str
     status: str
+    notes: str | None = None

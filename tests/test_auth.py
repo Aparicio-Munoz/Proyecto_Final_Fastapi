@@ -1,6 +1,6 @@
-from fastapi.testclient import TestClient
-from sqlmodel import SQLModel, Session, create_engine
 import pytest
+from fastapi.testclient import TestClient
+from sqlmodel import Session, SQLModel, create_engine
 
 from app.database import get_session
 from app.main import app
@@ -8,7 +8,9 @@ from app.main import app
 
 @pytest.fixture
 def client(tmp_path):
-    engine = create_engine(f"sqlite:///{tmp_path / 'test.db'}", connect_args={"check_same_thread": False})
+    engine = create_engine(
+        f"sqlite:///{tmp_path / 'test.db'}", connect_args={"check_same_thread": False}
+    )
     SQLModel.metadata.create_all(engine)
 
     def override_session():

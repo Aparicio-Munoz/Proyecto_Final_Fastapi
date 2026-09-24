@@ -184,9 +184,36 @@ La eliminación de `DELETE /appointments/{appointment_id}` es lógica: no borra 
 
 ## 10. Pruebas
 
+### Windows PowerShell
+
+Desde la raíz del proyecto, si aún no existe `venv`, créalo una sola vez y actívalo:
+
+```powershell
+py -m venv venv
+.\venv\Scripts\Activate.ps1
+python --version
+python -m pip install -r requirements.txt
+```
+
+Si PowerShell bloquea la activación, permite scripts solo durante esa sesión y vuelve a activarlo:
+
+```powershell
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+.\venv\Scripts\Activate.ps1
+```
+
+Ejecuta las pruebas y, al terminar, sal del entorno:
+
+```powershell
+python -m pytest -v
+deactivate
+```
+
+Si `py` no se reconoce, abre una nueva ventana de PowerShell e inténtalo de nuevo. También puedes crear el entorno con `python -m venv venv`.
+
 ```bash
 source .venv/bin/activate
-pytest -q
+python -m pytest -v
 ```
 
 Resultado verificado en este proyecto: `14 passed`.
@@ -205,3 +232,473 @@ Resultado verificado en este proyecto: `14 passed`.
 5. FastAPI convierte el resultado al esquema de salida y genera Swagger.
 
 Esta secuencia es la idea central para explicar el proyecto: **petición -> validación -> permisos -> consulta a base de datos -> respuesta**.
+
+# Proyecto Final FastAPI - Plataforma de Gestión de Citas Médicas
+
+# Proyecto Final FastAPI - Plataforma de Gestión de Citas Médicas
+## 1. Abrir el proyecto en otra pc
+## 1. Preparar el proyecto
+
+### Entrar a la carpeta
+
+Abre PowerShell y entra a la carpeta del proyecto:
+
+```powershell
+cd "C:\Users\Administrator\Proyecto_Final_Fastapi"
+```
+
+Comprueba que estás en la ubicación correcta:
+
+```powershell
+Get-Location
+```
+
+Y verifica que existen los archivos principales:
+
+```powershell
+Test-Path .\requirements.txt
+Test-Path .\alembic.ini
+Test-Path .\app\main.py
+```
+
+Los tres deben mostrar:
+
+```text
+True
+```
+
+---
+
+## 2. Activar el entorno virtual
+
+Ejecuta:
+
+```powershell
+.\venv\Scripts\Activate.ps1
+```
+
+Si aparece:
+
+```text
+(venv)
+```
+
+el entorno está activo.
+
+Comprueba Python:
+
+```powershell
+python --version
+```
+
+Si PowerShell no permite activar el entorno:
+
+```powershell
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+```
+
+Después:
+
+```powershell
+.\venv\Scripts\Activate.ps1
+```
+
+---
+
+## 3. Instalar dependencias
+
+Con `(venv)` activo:
+
+```powershell
+python -m pip install -r requirements.txt
+```
+
+Si es la primera vez que configuro el proyecto:
+
+```powershell
+python -m pip install --upgrade pip
+```
+
+---
+
+# 4. Trabajar con Alembic
+
+Antes de modificar la base de datos:
+
+```powershell
+python -m alembic current
+```
+
+Ver migraciones:
+
+```powershell
+python -m alembic history
+```
+
+Aplicar las migraciones existentes:
+
+```powershell
+python -m alembic upgrade head
+```
+
+Comprobar nuevamente:
+
+```powershell
+python -m alembic current
+```
+
+Debe aparecer la migración actual como:
+
+```text
+(head)
+```
+
+---
+
+# 5. Cuando agregue un campo nuevo
+
+Ejemplo: agregar `city` al usuario.
+
+### Paso 1 — Modelo
+
+En:
+
+```text
+app/models.py
+```
+
+agregar dentro de `User`:
+
+```python
+city: str | None = None
+```
+
+### Paso 2 — Schema
+
+En:
+
+```text
+app/schemas.py
+```
+
+agregar `city` en `UserRegister` si quiero recibirlo:
+
+```python
+city: str | None = None
+```
+
+Y en `UserPublic` si quiero devolverlo:
+
+```python
+city: str | None = None
+```
+
+### Paso 3 — Crear migración
+
+```powershell
+python -m alembic revision --autogenerate -m "add city to users"
+```
+
+Después abrir:
+
+```text
+alembic/versions/
+```
+
+y revisar que la migración solamente agregue `city`.
+
+### Paso 4 — Aplicar
+
+```powershell
+python -m alembic upgrade head
+```
+
+Comprobar:
+
+```powershell
+python -m alembic current
+```
+
+---
+
+# 6. Guardar el nuevo dato
+
+Si `city` se recibe durante el registro, abrir:
+
+```text
+app/routers/auth.py
+```
+
+Buscar:
+
+```python
+user = User(
+```
+
+y agregar:
+
+```python
+city = (data.city,)
+```
+
+No necesito crear otra migración por este cambio, porque la columna ya existe en la base de datos.
+
+---
+
+# 7. Ejecutar FastAPI
+
+Desde la raíz del proyecto:
+
+```powershell
+python -m uvicorn app.main:app --reload
+```
+
+Debe aparecer algo parecido a:
+
+```text
+Uvicorn running on http://127.0.0.1:8000
+```
+
+Abrir Swagger:
+
+```text
+http://127.0.0.1:8000/docs
+```
+
+Para detener el servidor:
+
+```text
+Ctrl + C
+```
+
+---
+
+# 8. Probar el registro en Swagger
+
+Buscar:
+
+```text
+POST /auth/register
+```
+
+Ejemplo:
+
+```json
+{
+  "name": "Carlos Demo",
+  "email": "carlos2@example.com",
+  "phone": "+573001234567",
+  "password": "jose123",
+  "role": "patient",
+  "document": "CC765432",
+  "specialty": null,
+  "professional_license": null,
+  "city": "Medellín"
+}
+```
+
+Debe devolver:
+
+```text
+201 Created
+```
+
+Si el correo ya existe:
+
+```text
+409
+```
+
+Si la contraseña tiene menos de 6 caracteres:
+
+```text
+422
+```
+
+---
+
+# 9. Autenticación
+
+Para iniciar sesión:
+
+```text
+POST /auth/login
+```
+
+Aunque Swagger muestre:
+
+```text
+username
+```
+
+en este proyecto se debe colocar el **correo electrónico**.
+
+El flujo es:
+
+```text
+correo + contraseña
+        ↓
+/auth/login
+        ↓
+JWT
+        ↓
+Authorize
+        ↓
+endpoints protegidos
+```
+
+---
+
+# 10. Si Swagger muestra `500 Internal Server Error`
+
+Primero mirar la terminal donde está corriendo Uvicorn.
+
+No modificar código inmediatamente.
+
+Si aparece:
+
+```text
+no such table: user
+```
+
+ejecutar:
+
+```powershell
+python -m alembic upgrade head
+```
+
+Después:
+
+```powershell
+python -m alembic current
+```
+
+No borrar `citas.db` sin revisar primero el problema.
+
+---
+
+# 11. Error que encontramos con la migración
+
+Si aparece:
+
+```text
+NameError: name 'sqlmodel' is not defined
+```
+
+abrir la migración en:
+
+```text
+alembic/versions/
+```
+
+y comprobar que tenga:
+
+```python
+import sqlmodel
+```
+
+Después ejecutar nuevamente:
+
+```powershell
+python -m alembic upgrade head
+```
+
+---
+
+# 12. Ejecutar pruebas
+
+```powershell
+python -m pytest -v
+```
+
+---
+
+# 13. Comandos principales
+
+```powershell
+# Entrar al proyecto
+cd "C:\Users\Administrator\Proyecto_Final_Fastapi"
+
+# Activar entorno
+.\venv\Scripts\Activate.ps1
+
+# Estado de Alembic
+python -m alembic current
+
+# Historial
+python -m alembic history
+
+# Crear migración
+python -m alembic revision --autogenerate -m "descripcion"
+
+# Aplicar migración
+python -m alembic upgrade head
+
+# Comprobar migraciones pendientes
+python -m alembic check
+
+# Ejecutar pruebas
+python -m pytest -v
+
+# Iniciar FastAPI
+python -m uvicorn app.main:app --reload
+```
+
+---
+
+# 14. Regla para solucionar errores
+
+Cuando aparezca un error:
+
+```text
+1. Leer el error completo.
+2. Revisar la terminal.
+3. Identificar el archivo donde ocurre.
+4. Hacer un solo cambio.
+5. Volver a ejecutar.
+6. Comprobar el resultado.
+```
+
+No borrar la base de datos ni modificar varios archivos al mismo tiempo sin saber cuál es el problema.
+
+---
+
+# 15. Flujo general del proyecto
+
+```text
+Swagger
+   ↓
+Schemas
+   ↓
+Routers
+   ↓
+Models
+   ↓
+Alembic
+   ↓
+SQLite
+```
+
+**Schemas:** validan los datos.
+
+**Routers:** reciben las solicitudes.
+
+**Models:** representan las tablas.
+
+**Alembic:** controla los cambios de la base de datos.
+
+**SQLite:** almacena los datos.
+
+**Swagger:** permite probar la API.
+
+# 16. Flujo general del proyecto 
+este comando es para  verificar que la columna existe en SQLite
+
+@'
+import sqlite3
+
+with sqlite3.connect("file:citas.db?mode=ro", uri=True) as con:
+    rows = con.execute("PRAGMA table_info(appointment)").fetchall()
+    for row in rows:
+        print(row)
+'@ | python -

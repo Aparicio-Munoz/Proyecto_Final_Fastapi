@@ -16,18 +16,24 @@ def get_current_user(
     try:
         user_id = decode_access_token(token)
     except ValueError:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token inválido")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Token inválido"
+        )
 
     user = session.get(User, user_id)
     if not user:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token inválido")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Token inválido"
+        )
     return user
 
 
 def require_role(role: str):
     def dependency(current_user: User = Depends(get_current_user)) -> User:
         if current_user.role != role:
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Permisos insuficientes")
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN, detail="Permisos insuficientes"
+            )
         return current_user
 
     return dependency

@@ -11,7 +11,9 @@ from app.schemas import Token, UserPublic, UserRegister
 router = APIRouter(prefix="/auth", tags=["Autenticación"])
 
 
-@router.post("/register", response_model=UserPublic, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/register", response_model=UserPublic, status_code=status.HTTP_201_CREATED
+)
 def register(data: UserRegister, session: Session = Depends(get_session)):
     existing_user = session.exec(select(User).where(User.email == data.email)).first()
     if existing_user:
@@ -26,6 +28,7 @@ def register(data: UserRegister, session: Session = Depends(get_session)):
         document=data.document,
         specialty=data.specialty,
         professional_license=data.professional_license,
+        city=data.city,
     )
     session.add(user)
     session.commit()

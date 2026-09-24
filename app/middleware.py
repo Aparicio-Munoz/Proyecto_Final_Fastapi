@@ -6,7 +6,6 @@ from fastapi import Request
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import Response
 
-
 logger = logging.getLogger("device_systems.http")
 
 
